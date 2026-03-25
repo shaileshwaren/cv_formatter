@@ -1,0 +1,28 @@
+# Secrets and local config
+.env
+.env.local
+.env.*.local
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Local samples and test artifacts (do not publish)
+test cv/
+test-output/
+formatted cv samples/

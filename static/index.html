@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oxydata CV Formatter</title>
+    <style>
+        :root {
+            --blue: #1F3864;
+            --blue-light: #2B4F8C;
+            --red: #C00000;
+            --red-light: #E02020;
+            --white: #FFFFFF;
+            --gray-50: #F8F9FA;
+            --gray-100: #E9ECEF;
+            --gray-200: #DEE2E6;
+            --gray-500: #6C757D;
+            --gray-700: #495057;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-700);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--blue);
+            color: var(--white);
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        header .logo {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        header .logo span {
+            color: var(--red-light);
+        }
+
+        header .subtitle {
+            font-size: 0.95rem;
+            opacity: 0.85;
+            border-left: 2px solid rgba(255,255,255,0.3);
+            padding-left: 1rem;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 3rem 1rem;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 560px;
+        }
+
+        .card h2 {
+            color: var(--blue);
+            font-size: 1.35rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card p.desc {
+            color: var(--gray-500);
+            font-size: 0.9rem;
+            margin-bottom: 1.75rem;
+            line-height: 1.5;
+        }
+
+        /* Drop zone */
+        .drop-zone {
+            border: 2px dashed var(--gray-200);
+            border-radius: 10px;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--gray-50);
+            position: relative;
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: var(--blue);
+            background: rgba(31, 56, 100, 0.04);
+        }
+
+        .drop-zone .icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+
+        .drop-zone .label {
+            font-size: 1rem;
+            color: var(--gray-700);
+            font-weight: 500;
+        }
+
+        .drop-zone .sublabel {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            margin-top: 0.35rem;
+        }
+
+        .drop-zone input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Selected file display */
+        .file-info {
+            display: none;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
+            background: var(--gray-50);
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        .file-info.visible { display: flex; }
+
+        .file-info .file-icon {
+            font-size: 1.5rem;
+        }
+
+        .file-info .file-name {
+            flex: 1;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--gray-700);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-info .file-size {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+
+        .file-info .remove-btn {
+            background: none;
+            border: none;
+            color: var(--red);
+            cursor: pointer;
+            font-size: 1.25rem;
+            padding: 0 0.25rem;
+            line-height: 1;
+        }
+
+        /* Convert button */
+        .convert-btn {
+            display: block;
+            width: 100%;
+            margin-top: 1.5rem;
+            padding: 0.9rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--white);
+            background: var(--blue);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .convert-btn:hover:not(:disabled) {
+            background: var(--blue-light);
+        }
+
+        .convert-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .convert-btn .btn-accent {
+            color: var(--red-light);
+        }
+
+        /* Progress section */
+        .progress-section {
+            display: none;
+            margin-top: 1.75rem;
+        }
+
+        .progress-section.visible { display: block; }
+
+        .progress-steps {
+            list-style: none;
+        }
+
+        .progress-steps li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            font-size: 0.9rem;
+            color: var(--gray-500);
+            transition: color 0.3s;
+        }
+
+        .progress-steps li.active {
+            color: var(--blue);
+            font-weight: 600;
+        }
+
+        .progress-steps li.done {
+            color: #28a745;
+        }
+
+        .progress-steps li .step-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+            border: 2px solid var(--gray-200);
+            color: var(--gray-500);
+            transition: all 0.3s;
+        }
+
+        .progress-steps li.active .step-icon {
+            border-color: var(--blue);
+            color: var(--blue);
+            animation: pulse 1.5s infinite;
+        }
+
+        .progress-steps li.done .step-icon {
+            border-color: #28a745;
+            background: #28a745;
+            color: var(--white);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        /* Error message */
+        .error-msg {
+            display: none;
+            margin-top: 1rem;
+            padding: 0.85rem 1rem;
+            background: #FFF5F5;
+            border: 1px solid #FCC;
+            border-radius: 8px;
+            color: var(--red);
+            font-size: 0.9rem;
+        }
+
+        .error-msg.visible { display: block; }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 1.25rem;
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            border-top: 1px solid var(--gray-100);
+        }
+
+        footer a {
+            color: var(--blue);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Oxy CV Formatter Bot</div>
+    </header>
+
+    <main>
+        <div class="card">
+            <h2>Format Your CV</h2>
+            <p class="desc">Upload your CV in PDF or Word format and we'll convert it to the Oxydata standard template.</p>
+
+            <div class="drop-zone" id="dropZone">
+                <input type="file" id="fileInput" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                <span class="icon">&#128196;</span>
+                <div class="label">Drag & drop your CV here</div>
+                <div class="sublabel">or click to browse &mdash; PDF or DOCX (max 20 MB)</div>
+            </div>
+
+            <div class="file-info" id="fileInfo">
+                <span class="file-icon">&#128196;</span>
+                <span class="file-name" id="fileName"></span>
+                <span class="file-size" id="fileSize"></span>
+                <button class="remove-btn" id="removeBtn" title="Remove file">&times;</button>
+            </div>
+
+            <button class="convert-btn" id="convertBtn" disabled>
+                Convert to Oxydata Format <span class="btn-accent">&#9654;</span>
+            </button>
+
+            <div class="progress-section" id="progressSection">
+                <ul class="progress-steps" id="progressSteps">
+                    <li id="step1">
+                        <span class="step-icon">1</span>
+                        <span>Extracting text from your CV...</span>
+                    </li>
+                    <li id="step2">
+                        <span class="step-icon">2</span>
+                        <span>Analyzing CV content with AI...</span>
+                    </li>
+                    <li id="step3">
+                        <span class="step-icon">3</span>
+                        <span>Generating formatted document...</span>
+                    </li>
+                    <li id="step4">
+                        <span class="step-icon">4</span>
+                        <span>Done! Downloading your CV...</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="error-msg" id="errorMsg"></div>
+        </div>
+    </main>
+
+    <footer>
+        Oxydata Software Sdn Bhd &middot; <a href="https://www.oxydata.my" target="_blank">www.oxydata.my</a>
+    </footer>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const removeBtn = document.getElementById('removeBtn');
+        const convertBtn = document.getElementById('convertBtn');
+        const progressSection = document.getElementById('progressSection');
+        const errorMsg = document.getElementById('errorMsg');
+
+        let selectedFile = null;
+
+        // Drag & drop events
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropZone.addEventListener(evt, e => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(evt => {
+            dropZone.addEventListener(evt, e => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            });
+        });
+
+        dropZone.addEventListener('drop', e => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleFile(files[0]);
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) handleFile(fileInput.files[0]);
+        });
+
+        removeBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.classList.remove('visible');
+            convertBtn.disabled = true;
+            hideError();
+        });
+
+        function handleFile(file) {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['pdf', 'docx'].includes(ext)) {
+                showError('Please upload a PDF or DOCX file.');
+                return;
+            }
+            if (file.size > 20 * 1024 * 1024) {
+                showError('File exceeds 20 MB limit.');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileSize.textContent = formatSize(file.size);
+            fileInfo.classList.add('visible');
+            convertBtn.disabled = false;
+            hideError();
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        // Convert button
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            convertBtn.disabled = true;
+            hideError();
+            resetProgress();
+            progressSection.classList.add('visible');
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            try {
+                const response = await fetch('/api/convert-stream', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(text || `Server error (${response.status})`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop();
+
+                    let eventType = '';
+                    for (const line of lines) {
+                        if (line.startsWith('event: ')) {
+                            eventType = line.slice(7).trim();
+                        } else if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.slice(6));
+                            handleSSE(eventType, data);
+                        }
+                    }
+                }
+            } catch (err) {
+                showError(err.message || 'An unexpected error occurred.');
+                progressSection.classList.remove('visible');
+            } finally {
+                convertBtn.disabled = false;
+            }
+        });
+
+        function handleSSE(event, data) {
+            if (event === 'progress') {
+                setStepActive(data.step);
+            } else if (event === 'done') {
+                setStepDone(4);
+                // Trigger download
+                if (data.download_url) {
+                    const a = document.createElement('a');
+                    a.href = data.download_url;
+                    a.download = data.filename || 'formatted_cv.docx';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                }
+            } else if (event === 'error') {
+                showError(data.message);
+            }
+        }
+
+        function resetProgress() {
+            for (let i = 1; i <= 4; i++) {
+                const el = document.getElementById('step' + i);
+                el.classList.remove('active', 'done');
+            }
+        }
+
+        function setStepActive(step) {
+            // Mark all previous steps as done
+            for (let i = 1; i < step; i++) {
+                const el = document.getElementById('step' + i);
+                el.classList.remove('active');
+                el.classList.add('done');
+                el.querySelector('.step-icon').textContent = '\u2713';
+            }
+            const current = document.getElementById('step' + step);
+            current.classList.add('active');
+            current.classList.remove('done');
+        }
+
+        function setStepDone(step) {
+            for (let i = 1; i <= step; i++) {
+                const el = document.getElementById('step' + i);
+                el.classList.remove('active');
+                el.classList.add('done');
+                el.querySelector('.step-icon').textContent = '\u2713';
+            }
+        }
+
+        function showError(msg) {
+            errorMsg.textContent = msg;
+            errorMsg.classList.add('visible');
+        }
+
+        function hideError() {
+            errorMsg.textContent = '';
+            errorMsg.classList.remove('visible');
+        }
+    </script>
+</body>
+</html>

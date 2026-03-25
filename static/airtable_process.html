@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing CV — Oxydata</title>
+    <style>
+        :root {
+            --blue: #1F3864;
+            --blue-light: #2B4F8C;
+            --red: #C00000;
+            --red-light: #E02020;
+            --white: #FFFFFF;
+            --gray-50: #F8F9FA;
+            --gray-100: #E9ECEF;
+            --gray-200: #DEE2E6;
+            --gray-500: #6C757D;
+            --gray-700: #495057;
+            --green: #28a745;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-700);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: var(--blue);
+            color: var(--white);
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        header .logo {
+            font-size: 1.75rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 3rem 1rem;
+        }
+
+        .card {
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 560px;
+        }
+
+        .card h2 {
+            color: var(--blue);
+            font-size: 1.35rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card p.desc {
+            color: var(--gray-500);
+            font-size: 0.9rem;
+            margin-bottom: 1.75rem;
+            line-height: 1.5;
+        }
+
+        .progress-steps {
+            list-style: none;
+        }
+
+        .progress-steps li {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            font-size: 0.9rem;
+            color: var(--gray-500);
+            transition: color 0.3s;
+        }
+
+        .progress-steps li.active {
+            color: var(--blue);
+            font-weight: 600;
+        }
+
+        .progress-steps li.done {
+            color: var(--green);
+        }
+
+        .progress-steps li .step-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+            border: 2px solid var(--gray-200);
+            color: var(--gray-500);
+            transition: all 0.3s;
+        }
+
+        .progress-steps li.active .step-icon {
+            border-color: var(--blue);
+            color: var(--blue);
+            animation: pulse 1.5s infinite;
+        }
+
+        .progress-steps li.done .step-icon {
+            border-color: var(--green);
+            background: var(--green);
+            color: var(--white);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .result-msg {
+            display: none;
+            margin-top: 1.25rem;
+            padding: 1rem 1.15rem;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .result-msg.success {
+            display: block;
+            background: #F0FFF4;
+            border: 1px solid #C6F6D5;
+            color: #276749;
+        }
+
+        .result-msg.error {
+            display: block;
+            background: #FFF5F5;
+            border: 1px solid #FCC;
+            color: var(--red);
+        }
+
+        .missing-param {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--red);
+            font-size: 1rem;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.25rem;
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            border-top: 1px solid var(--gray-100);
+        }
+
+        footer a {
+            color: var(--blue);
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Oxy CV Formatter Bot</div>
+    </header>
+
+    <main>
+        <div class="card" id="mainCard">
+            <h2>Processing CV from Airtable</h2>
+            <p class="desc">Your CV is being formatted automatically. This usually takes 15–30 seconds.</p>
+
+            <ul class="progress-steps" id="progressSteps">
+                <li id="step1">
+                    <span class="step-icon">1</span>
+                    <span>Fetching CV from Airtable...</span>
+                </li>
+                <li id="step2">
+                    <span class="step-icon">2</span>
+                    <span>Extracting text from CV...</span>
+                </li>
+                <li id="step3">
+                    <span class="step-icon">3</span>
+                    <span>Analyzing CV content with AI...</span>
+                </li>
+                <li id="step4">
+                    <span class="step-icon">4</span>
+                    <span>Generating formatted document...</span>
+                </li>
+                <li id="step5">
+                    <span class="step-icon">5</span>
+                    <span>Uploading result to Airtable...</span>
+                </li>
+            </ul>
+
+            <div class="result-msg" id="resultMsg"></div>
+        </div>
+    </main>
+
+    <footer>
+        Oxydata Software Sdn Bhd &middot; <a href="https://www.oxydata.my" target="_blank">www.oxydata.my</a>
+    </footer>
+
+    <script>
+        const TOTAL_STEPS = 5;
+        const resultMsg = document.getElementById('resultMsg');
+
+        const params = new URLSearchParams(window.location.search);
+        const recordId = params.get('record_id');
+
+        if (!recordId) {
+            document.getElementById('mainCard').innerHTML =
+                '<div class="missing-param">Missing record_id parameter. Please use the Airtable button to open this page.</div>';
+        } else {
+            startProcessing(recordId);
+        }
+
+        function startProcessing(recordId) {
+            const url = `/airtable/process-stream?record_id=${encodeURIComponent(recordId)}`;
+
+            fetch(url).then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text || `Server error (${response.status})`); });
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                function pump() {
+                    return reader.read().then(({ done, value }) => {
+                        if (done) return;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+                        let eventType = '';
+                        for (const line of lines) {
+                            if (line.startsWith('event: ')) {
+                                eventType = line.slice(7).trim();
+                            } else if (line.startsWith('data: ')) {
+                                const data = JSON.parse(line.slice(6));
+                                handleSSE(eventType, data);
+                            }
+                        }
+
+                        return pump();
+                    });
+                }
+
+                return pump();
+            }).catch(err => {
+                showResult('error', err.message || 'An unexpected error occurred.');
+            });
+        }
+
+        function handleSSE(event, data) {
+            if (event === 'progress') {
+                setStepActive(data.step);
+            } else if (event === 'done') {
+                setStepDone(TOTAL_STEPS);
+                showResult('success', data.message || 'Done! The formatted CV has been uploaded to Airtable.');
+            } else if (event === 'error') {
+                showResult('error', data.message || 'An error occurred during processing.');
+            }
+        }
+
+        function setStepActive(step) {
+            for (let i = 1; i < step; i++) {
+                const el = document.getElementById('step' + i);
+                el.classList.remove('active');
+                el.classList.add('done');
+                el.querySelector('.step-icon').textContent = '\u2713';
+            }
+            const current = document.getElementById('step' + step);
+            if (current) {
+                current.classList.add('active');
+                current.classList.remove('done');
+            }
+        }
+
+        function setStepDone(upTo) {
+            for (let i = 1; i <= upTo; i++) {
+                const el = document.getElementById('step' + i);
+                el.classList.remove('active');
+                el.classList.add('done');
+                el.querySelector('.step-icon').textContent = '\u2713';
+            }
+        }
+
+        function showResult(type, message) {
+            resultMsg.textContent = message;
+            resultMsg.className = 'result-msg ' + type;
+        }
+    </script>
+</body>
+</html>
