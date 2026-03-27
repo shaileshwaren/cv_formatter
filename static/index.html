@@ -132,8 +132,8 @@
         /* Selected file display */
         .file-info {
             display: none;
-            align-items: center;
-            gap: 0.75rem;
+            flex-direction: column;
+            gap: 0.6rem;
             padding: 0.85rem 1rem;
             background: var(--gray-50);
             border: 1px solid var(--gray-200);
@@ -143,31 +143,69 @@
 
         .file-info.visible { display: flex; }
 
-        .file-info .file-icon {
-            font-size: 1.5rem;
+        .file-info-header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
         }
 
-        .file-info .file-name {
+        .file-summary {
+            font-size: 0.88rem;
+            color: var(--gray-700);
+            font-weight: 600;
+        }
+
+        .file-summary-size {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+        }
+
+        .file-list {
+            width: 100%;
+            max-height: 180px;
+            overflow: auto;
+            border-top: 1px solid var(--gray-200);
+            padding-top: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .file-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.25rem;
+            border-radius: 6px;
+        }
+
+        .file-row:hover {
+            background: #f1f3f5;
+        }
+
+        .file-row-name {
             flex: 1;
-            font-size: 0.9rem;
-            font-weight: 500;
+            font-size: 0.86rem;
             color: var(--gray-700);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
-        .file-info .file-size {
+        .file-row-size {
             font-size: 0.8rem;
             color: var(--gray-500);
         }
 
-        .file-info .remove-btn {
+        .remove-btn,
+        .remove-file-btn {
             background: none;
             border: none;
             color: var(--red);
             cursor: pointer;
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             padding: 0 0.25rem;
             line-height: 1;
         }
@@ -208,6 +246,51 @@
         }
 
         .progress-section.visible { display: block; }
+
+        .batch-progress {
+            display: none;
+            margin-bottom: 1rem;
+            padding: 0.85rem 0.9rem;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            background: var(--gray-50);
+        }
+
+        .batch-progress.visible { display: block; }
+
+        .batch-progress .meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            font-size: 0.84rem;
+            color: var(--gray-700);
+            margin-bottom: 0.45rem;
+        }
+
+        .batch-progress .current-file {
+            font-size: 0.82rem;
+            color: var(--gray-500);
+            margin-bottom: 0.45rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .batch-progress .bar {
+            width: 100%;
+            height: 8px;
+            border-radius: 99px;
+            background: var(--gray-200);
+            overflow: hidden;
+        }
+
+        .batch-progress .bar-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--blue);
+            transition: width 0.3s ease;
+        }
 
         .progress-steps {
             list-style: none;
@@ -299,21 +382,25 @@
 
     <main>
         <div class="card">
-            <h2>Format Your CV</h2>
-            <p class="desc">Upload your CV in PDF or Word format and we'll convert it to the Oxydata standard template.</p>
+            <h2>Format Your CVs</h2>
+            <p class="desc">Upload your CVs in PDF or Word format and we'll convert it to the Oxydata standard template.</p>
 
             <div class="drop-zone" id="dropZone">
-                <input type="file" id="fileInput" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document">
+                <input type="file" id="fileInput" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple>
                 <span class="icon">&#128196;</span>
-                <div class="label">Drag & drop your CV here</div>
-                <div class="sublabel">or click to browse &mdash; PDF or DOCX (max 20 MB)</div>
+                <div class="label">Drag & drop your CVs here</div>
+                <div class="sublabel">or click to browse &mdash; PDF or DOCX</div>
             </div>
 
             <div class="file-info" id="fileInfo">
-                <span class="file-icon">&#128196;</span>
-                <span class="file-name" id="fileName"></span>
-                <span class="file-size" id="fileSize"></span>
-                <button class="remove-btn" id="removeBtn" title="Remove file">&times;</button>
+                <div class="file-info-header">
+                    <div>
+                        <div class="file-summary" id="fileSummary"></div>
+                        <div class="file-summary-size" id="fileSummarySize"></div>
+                    </div>
+                    <button class="remove-btn" id="removeBtn" title="Clear all files">Clear</button>
+                </div>
+                <div class="file-list" id="fileList"></div>
             </div>
 
             <button class="convert-btn" id="convertBtn" disabled>
@@ -321,6 +408,16 @@
             </button>
 
             <div class="progress-section" id="progressSection">
+                <div class="batch-progress" id="batchProgress">
+                    <div class="meta">
+                        <span id="batchCountText">Processed 0/0 CVs</span>
+                        <span id="batchEtaText"></span>
+                    </div>
+                    <div class="current-file" id="batchCurrentFile"></div>
+                    <div class="bar">
+                        <div class="bar-fill" id="batchBarFill"></div>
+                    </div>
+                </div>
                 <ul class="progress-steps" id="progressSteps">
                     <li id="step1">
                         <span class="step-icon">1</span>
@@ -353,14 +450,20 @@
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const fileInfo = document.getElementById('fileInfo');
-        const fileName = document.getElementById('fileName');
-        const fileSize = document.getElementById('fileSize');
+        const fileSummary = document.getElementById('fileSummary');
+        const fileSummarySize = document.getElementById('fileSummarySize');
+        const fileList = document.getElementById('fileList');
         const removeBtn = document.getElementById('removeBtn');
         const convertBtn = document.getElementById('convertBtn');
         const progressSection = document.getElementById('progressSection');
         const errorMsg = document.getElementById('errorMsg');
+        const batchProgress = document.getElementById('batchProgress');
+        const batchCountText = document.getElementById('batchCountText');
+        const batchCurrentFile = document.getElementById('batchCurrentFile');
+        const batchEtaText = document.getElementById('batchEtaText');
+        const batchBarFill = document.getElementById('batchBarFill');
 
-        let selectedFile = null;
+        let selectedFiles = [];
 
         // Drag & drop events
         ['dragenter', 'dragover'].forEach(evt => {
@@ -379,38 +482,105 @@
 
         dropZone.addEventListener('drop', e => {
             const files = e.dataTransfer.files;
-            if (files.length > 0) handleFile(files[0]);
+            if (files.length > 0) handleFiles(files);
         });
 
         fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) handleFile(fileInput.files[0]);
+            if (fileInput.files.length > 0) handleFiles(fileInput.files);
         });
 
         removeBtn.addEventListener('click', () => {
-            selectedFile = null;
+            selectedFiles = [];
             fileInput.value = '';
-            fileInfo.classList.remove('visible');
+            renderSelectedFiles();
             convertBtn.disabled = true;
             hideError();
         });
 
-        function handleFile(file) {
-            const ext = file.name.split('.').pop().toLowerCase();
-            if (!['pdf', 'docx'].includes(ext)) {
-                showError('Please upload a PDF or DOCX file.');
-                return;
+        function handleFiles(fileList) {
+            const files = Array.from(fileList);
+            if (files.length < 1) return;
+            const validNewFiles = [];
+            for (const file of files) {
+                const ext = file.name.split('.').pop().toLowerCase();
+                if (!['pdf', 'docx'].includes(ext)) {
+                    showError('Please upload PDF or DOCX files only.');
+                    return;
+                }
+                if (file.size > 20 * 1024 * 1024) {
+                    showError(`File exceeds 20 MB limit: ${file.name}`);
+                    return;
+                }
+                validNewFiles.push(file);
             }
-            if (file.size > 20 * 1024 * 1024) {
-                showError('File exceeds 20 MB limit.');
+
+            // Add files cumulatively to make one-by-one drag/drop easy.
+            for (const file of validNewFiles) {
+                if (!isDuplicateFile(file)) {
+                    selectedFiles.push(file);
+                }
+            }
+            renderSelectedFiles();
+            convertBtn.disabled = false;
+            hideError();
+        }
+
+        function isDuplicateFile(file) {
+            return selectedFiles.some(
+                existing =>
+                    existing.name === file.name &&
+                    existing.size === file.size &&
+                    existing.lastModified === file.lastModified
+            );
+        }
+
+        function renderSelectedFiles() {
+            if (selectedFiles.length < 1) {
+                fileInfo.classList.remove('visible');
+                fileSummary.textContent = '';
+                fileSummarySize.textContent = '';
+                fileList.innerHTML = '';
                 return;
             }
 
-            selectedFile = file;
-            fileName.textContent = file.name;
-            fileSize.textContent = formatSize(file.size);
+            const totalBytes = selectedFiles.reduce((sum, f) => sum + f.size, 0);
+            fileSummary.textContent = `${selectedFiles.length} file${selectedFiles.length > 1 ? 's' : ''} selected`;
+            fileSummarySize.textContent = `${formatSize(totalBytes)} total`;
+
+            fileList.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const row = document.createElement('div');
+                row.className = 'file-row';
+                row.innerHTML = `
+                    <span class="file-row-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</span>
+                    <span class="file-row-size">${formatSize(file.size)}</span>
+                    <button class="remove-file-btn" data-index="${index}" title="Remove file">&times;</button>
+                `;
+                fileList.appendChild(row);
+            });
+
             fileInfo.classList.add('visible');
-            convertBtn.disabled = false;
-            hideError();
+        }
+
+        fileList.addEventListener('click', (event) => {
+            const target = event.target;
+            if (!(target instanceof HTMLElement)) return;
+            if (!target.classList.contains('remove-file-btn')) return;
+
+            const index = Number(target.dataset.index);
+            if (Number.isNaN(index)) return;
+            selectedFiles.splice(index, 1);
+            renderSelectedFiles();
+            convertBtn.disabled = selectedFiles.length < 1;
+        });
+
+        function escapeHtml(value) {
+            return value
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
         }
 
         function formatSize(bytes) {
@@ -421,80 +591,171 @@
 
         // Convert button
         convertBtn.addEventListener('click', async () => {
-            if (!selectedFile) return;
+            if (selectedFiles.length < 1) return;
 
             convertBtn.disabled = true;
             hideError();
             resetProgress();
+            resetBatchProgress();
             progressSection.classList.add('visible');
+            if (selectedFiles.length > 1) {
+                batchProgress.classList.add('visible');
+                await runBatchConvert();
+            } else {
+                batchProgress.classList.remove('visible');
+                await runSingleConvert(selectedFiles[0]);
+            }
+            convertBtn.disabled = false;
+        });
 
+        async function runSingleConvert(file) {
             const formData = new FormData();
-            formData.append('file', selectedFile);
-
+            formData.append('file', file);
             try {
-                const response = await fetch('/api/convert-stream', {
-                    method: 'POST',
-                    body: formData,
-                });
-
-                if (!response.ok) {
-                    const text = await response.text();
-                    throw new Error(text || `Server error (${response.status})`);
-                }
-
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-                let buffer = '';
-
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split('\n');
-                    buffer = lines.pop();
-
-                    let eventType = '';
-                    for (const line of lines) {
-                        if (line.startsWith('event: ')) {
-                            eventType = line.slice(7).trim();
-                        } else if (line.startsWith('data: ')) {
-                            const data = JSON.parse(line.slice(6));
-                            handleSSE(eventType, data);
-                        }
-                    }
-                }
+                const response = await fetch('/api/convert-stream', { method: 'POST', body: formData });
+                await processSSE(response, handleSingleSSE);
             } catch (err) {
                 showError(err.message || 'An unexpected error occurred.');
                 progressSection.classList.remove('visible');
-            } finally {
-                convertBtn.disabled = false;
             }
-        });
+        }
 
-        function handleSSE(event, data) {
+        async function runBatchConvert() {
+            const formData = new FormData();
+            for (const file of selectedFiles) formData.append('files', file);
+            try {
+                const response = await fetch('/api/convert-batch-stream', { method: 'POST', body: formData });
+                await processSSE(response, handleBatchSSE);
+            } catch (err) {
+                showError(err.message || 'An unexpected error occurred.');
+                progressSection.classList.remove('visible');
+            }
+        }
+
+        async function processSSE(response, handler) {
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(text || `Server error (${response.status})`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let eventType = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop();
+
+                for (const line of lines) {
+                    if (line.startsWith('event: ')) {
+                        eventType = line.slice(7).trim();
+                    } else if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.slice(6));
+                        handler(eventType, data);
+                    }
+                }
+            }
+        }
+
+        function handleSingleSSE(event, data) {
             if (event === 'progress') {
                 setStepActive(data.step);
             } else if (event === 'done') {
                 setStepDone(4);
-                // Trigger download
                 if (data.download_url) {
-                    const a = document.createElement('a');
-                    a.href = data.download_url;
-                    a.download = data.filename || 'formatted_cv.docx';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
+                    triggerDownload(data.download_url, data.filename || 'formatted_cv.docx');
                 }
             } else if (event === 'error') {
                 showError(data.message);
             }
         }
 
+        function handleBatchSSE(event, data) {
+            if (event === 'batch_start') {
+                updateBatchProgress(0, data.total || 0, '', null);
+                return;
+            }
+            if (event === 'file_start') {
+                resetProgress();
+                updateBatchProgress(data.processed || 0, data.total || 0, data.filename || '', data.eta_seconds);
+                return;
+            }
+            if (event === 'file_progress') {
+                setStepActive(data.step);
+                return;
+            }
+            if (event === 'file_done') {
+                setStepDone(4);
+                updateBatchProgress(data.processed || 0, data.total || 0, '', data.eta_seconds);
+                return;
+            }
+            if (event === 'file_error') {
+                updateBatchProgress(data.processed || 0, data.total || 0, '', data.eta_seconds);
+                showError(`Failed: ${data.filename} - ${data.message}`);
+                return;
+            }
+            if (event === 'batch_done') {
+                const summary = `Completed ${data.success_count || 0}/${data.total || 0} CVs.`;
+                if (data.failed_count > 0) {
+                    showError(`${summary} ${data.failed_count} failed.`);
+                }
+                updateBatchProgress(data.processed || 0, data.total || 0, 'All files processed', null);
+                if (data.download_url) {
+                    triggerDownload(data.download_url, data.filename || 'formatted_cvs.zip');
+                }
+                return;
+            }
+            if (event === 'error') {
+                showError(data.message || 'Batch conversion failed.');
+            }
+        }
+
+        function triggerDownload(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+
+        function resetBatchProgress() {
+            batchCountText.textContent = 'Processed 0/0 CVs';
+            batchCurrentFile.textContent = '';
+            batchEtaText.textContent = '';
+            batchBarFill.style.width = '0%';
+        }
+
+        function updateBatchProgress(processed, total, currentFile, etaSeconds) {
+            const safeTotal = total > 0 ? total : 0;
+            const pct = safeTotal ? Math.round((processed / safeTotal) * 100) : 0;
+            batchCountText.textContent = `Processed ${processed}/${safeTotal} CVs`;
+            batchCurrentFile.textContent = currentFile ? `Current: ${currentFile}` : '';
+            batchBarFill.style.width = `${pct}%`;
+            if (typeof etaSeconds === 'number' && etaSeconds > 0) {
+                batchEtaText.textContent = `ETA ~ ${formatEta(etaSeconds)}`;
+            } else {
+                batchEtaText.textContent = '';
+            }
+        }
+
+        function formatEta(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            if (mins < 1) return `${secs}s`;
+            return `${mins}m ${secs}s`;
+        }
+
         function resetProgress() {
             for (let i = 1; i <= 4; i++) {
                 const el = document.getElementById('step' + i);
                 el.classList.remove('active', 'done');
+                el.querySelector('.step-icon').textContent = String(i);
             }
         }
 
@@ -509,6 +770,7 @@
             const current = document.getElementById('step' + step);
             current.classList.add('active');
             current.classList.remove('done');
+            current.querySelector('.step-icon').textContent = String(step);
         }
 
         function setStepDone(step) {

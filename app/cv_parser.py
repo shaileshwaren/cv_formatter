@@ -5,8 +5,11 @@ Send extracted CV text to OpenAI GPT-4o and get back structured JSON.
 import json
 import os
 import re
+
 from openai import OpenAI
 from pydantic import BaseModel, Field
+
+from app.hobby_filter import filter_personal_hobbies
 
 
 # ── Pydantic models for structured CV data ──────────────────
@@ -75,7 +78,7 @@ Rules:
 - For education, extract degree name, institution, graduation year, and grade/GPA if available.
 - For education, include ONLY Diploma-level qualifications or higher (Diploma, Advanced Diploma, Bachelor's, Master's, PhD, etc.). Exclude high school, secondary school, matriculation, SPM/O-Level/A-Level, or equivalent lower qualifications.
 - For languages, extract each language with proficiency level on a strict numeric scale from 1 to 10. Convert textual descriptors (e.g. Native/Fluent/Advanced/Intermediate/Basic) to the closest numeric value.
-- For hobbies, extract any interests/hobbies mentioned.
+- For hobbies, extract ONLY personal, non-work interests (e.g. sports, music, travel, reading for pleasure, arts, volunteering causes). Do NOT list professional skills, technologies, methodologies, certifications, or work interests (e.g. digital transformation, stakeholder management, cloud, agile, SaaS, leadership, analytics). If the CV has no clear personal hobbies, use an empty array.
 - The professional_summary should be a concise paragraph summarizing the candidate's profile. If the CV has an existing summary/objective, use it. If not, compose a brief one from the CV content.
 - Dates should be in "Mon YYYY" format (e.g., "Jan 2020"). Use "Present" for current positions.
 
@@ -315,4 +318,6 @@ def parse_cv(raw_text: str) -> CVData:
     # Business rule: language levels must be on a 1-10 numeric scale.
     for lang in data.get("languages", []):
         lang["level"] = _normalize_language_level(lang.get("level", ""))
+    # Drop items that look like work skills mis-tagged as hobbies.
+    data["hobbies"] = filter_personal_hobbies(data.get("hobbies", []))
     return CVData(**data)

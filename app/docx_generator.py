@@ -11,6 +11,7 @@ from docx.oxml.ns import qn, nsdecls
 from docx.oxml import parse_xml
 
 from app.cv_parser import CVData
+from app.hobby_filter import filter_personal_hobbies
 from app import template_spec as T
 
 
@@ -19,33 +20,6 @@ def _has_real_skills(skills_text: str) -> bool:
     if not normalized:
         return False
     return normalized not in {"<to be filled>", "to be filled", "n/a", "na", "-"}
-
-
-def _is_non_work_hobby(item: str) -> bool:
-    """
-    Heuristic guardrail: keep clearly personal hobbies/interests,
-    exclude work/industry capability phrases that GPT may misclassify.
-    """
-    text = (item or "").strip()
-    if not text:
-        return False
-
-    normalized = text.lower()
-    if normalized in {"<to be filled>", "to be filled", "n/a", "na", "-"}:
-        return False
-
-    work_like_keywords = {
-        "saas", "hr", "hiring", "employee engagement", "digital transformation",
-        "sustainability", "optimization", "strategy", "strategic", "leadership",
-        "stakeholder", "product", "project", "program", "consulting",
-        "business development", "operations", "analytics", "data science",
-        "machine learning", "ai", "automation", "cloud", "architecture",
-        "software", "engineering", "enterprise", "governance", "compliance",
-        "kpi", "okrs", "transformation",
-    }
-
-    # Filter out obvious work-domain phrases.
-    return not any(keyword in normalized for keyword in work_like_keywords)
 
 
 def _set_run(run, font_size=T.SIZE_BODY, bold=False, italic=False,
@@ -367,7 +341,7 @@ def generate_docx(cv: CVData, output_path: str) -> str:
             _add_education_entry(doc, entry)
 
     # ── Hobbies & Interests ─────────────────────────────────
-    valid_hobbies = [hobby for hobby in cv.hobbies if _is_non_work_hobby(hobby)]
+    valid_hobbies = filter_personal_hobbies(cv.hobbies)
     if cv.languages or valid_hobbies:
         _add_section_header(doc, T.SECTION_HOBBIES)
 
